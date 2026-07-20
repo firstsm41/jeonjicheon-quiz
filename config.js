@@ -8,8 +8,9 @@
 // ─────────────────────────────────────────────────────────────
 
 window.APP_CONFIG = {
-  SUPABASE_URL: 'https://YOUR-PROJECT-REF.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR-ANON-KEY',
+  SUPABASE_URL: 'https://auctigvvtklbppskwaaf.supabase.co',
+  SUPABASE_ANON_KEY:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1Y3RpZ3Z2dGtsYnBwc2t3YWFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NjIzNjAsImV4cCI6MjEwMDEzODM2MH0.5-cjtX-idz5zi1z14kZ7vzAPCwo1hX7DKeDebdSldBI',
 
   // 설문 회차 구분용. 새 기수/새 모임마다 값을 바꾸면 통계가 분리됩니다.
   QUIZ_SESSION: '2026-summer',
