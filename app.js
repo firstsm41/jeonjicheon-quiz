@@ -1,5 +1,9 @@
 /* ─────────────────────────────────────────────
-   전지천 이단 예방 퀴즈 — 앱 로직
+   이단 예방 퀴즈 — 앱 로직
+
+   점수를 매기는 앱이 아닙니다. 강의 중 청중의 전체 인지도를
+   빠르게 파악하는 것이 목적이라, 개인 점수는 어디에도 표시하지 않고
+   문항별 응답 분포만 모아서 보여줍니다.
    ───────────────────────────────────────────── */
 (() => {
   'use strict';
@@ -8,6 +12,7 @@
   const QUESTIONS = window.QUESTIONS || [];
   const TOTAL = QUESTIONS.length;
   const KEY_ROW = 'jjc-quiz-row-' + (CFG.QUIZ_SESSION || 'default');
+  const KEY_LOCAL = 'jjc-quiz-local';
 
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls) => {
@@ -15,6 +20,7 @@
     if (cls) n.className = cls;
     return n;
   };
+  const numMark = (i) => ['①', '②', '③', '④', '⑤', '⑥'][i] || i + 1 + '.';
 
   // ── Supabase 연결 (설정이 비어 있으면 오프라인 모드) ──────────
   const configured =
@@ -31,18 +37,16 @@
   // ── 상태 ──────────────────────────────────────────────
   let idx = 0; // 현재 문항
   let picked = null; // 현재 선택지
-  let locked = false; // 채점 완료 여부
-  let answers = []; // 사용자의 답안 (인덱스 배열)
-  let rows = []; // 서버에서 받은 전체 응답
+  let locked = false; // 정답 공개 여부
+  let answers = []; // 이번 참여자의 답안
+  let rows = []; // 전체 응답
   let statsOpen = false;
 
   // ── 화면 전환 ─────────────────────────────────────────
   function show(name) {
-    document
-      .querySelectorAll('.screen')
-      .forEach((s) => s.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
     $('screen-' + name).classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    window.scrollTo(0, 0);
     statsOpen = name === 'stats';
     if (statsOpen) refreshStats();
   }
@@ -56,7 +60,7 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
   }
 
-  // ── 퀴즈 렌더링 ───────────────────────────────────────
+  // ── 퀴즈 ──────────────────────────────────────────────
   function renderQuestion() {
     const q = QUESTIONS[idx];
     picked = null;
@@ -66,7 +70,6 @@
     $('q-total').textContent = TOTAL;
     $('q-bar').style.width = (idx / TOTAL) * 100 + '%';
     $('q-text').textContent = q.q;
-    $('q-feedback').innerHTML = '';
 
     const box = $('q-options');
     box.innerHTML = '';
@@ -84,7 +87,7 @@
 
     const next = $('btn-next');
     next.disabled = true;
-    next.textContent = '답안 확인';
+    next.textContent = '정답 확인';
   }
 
   function choose(i) {
@@ -96,7 +99,8 @@
     $('btn-next').disabled = false;
   }
 
-  function grade() {
+  // 정답만 표시합니다. 해설이나 맞고 틀림에 대한 문구는 두지 않습니다.
+  function reveal() {
     const q = QUESTIONS[idx];
     locked = true;
     answers[idx] = picked;
@@ -108,31 +112,13 @@
       else if (k === picked) n.classList.add('wrong');
     });
 
-    const ok = picked === q.answer;
-    const fb = el('div', 'feedback ' + (ok ? 'ok' : 'no'));
-    const p = el('p');
-    p.textContent = q.explain;
-    // 정답일 때만 표시. 틀렸을 때는 선택지 색으로 이미 드러나므로 해설만 보여줍니다.
-    if (ok) {
-      const v = el('span', 'verdict');
-      v.textContent = '✓ 정답입니다';
-      fb.appendChild(v);
-    }
-    fb.appendChild(p);
-    $('q-feedback').innerHTML = '';
-    $('q-feedback').appendChild(fb);
-
     $('q-bar').style.width = ((idx + 1) / TOTAL) * 100 + '%';
-    $('btn-next').textContent = idx + 1 < TOTAL ? '다음 문항 →' : '결과 확인하기';
-  }
-
-  function correctCount(list) {
-    return QUESTIONS.reduce((n, q, i) => n + (list[i] === q.answer ? 1 : 0), 0);
+    $('btn-next').textContent = idx + 1 < TOTAL ? '다음 문항 →' : '제출하기';
   }
 
   $('btn-next').addEventListener('click', () => {
     if (!locked) {
-      grade();
+      reveal();
       return;
     }
     if (idx + 1 < TOTAL) {
@@ -143,111 +129,52 @@
     }
   });
 
-  // ── 결과 ──────────────────────────────────────────────
-  const TIERS = [
-    { min: 5, title: '완벽합니다! 🎉', desc: '이단의 핵심 특징을 정확히 분별하고 계십니다. 이제 곁에 있는 친구에게도 알려주세요.' },
-    { min: 4, title: '든든합니다 👏', desc: '기본기가 탄탄합니다. 놓친 한 문항의 해설을 한 번만 더 읽어보면 완벽해요.' },
-    { min: 3, title: '절반은 넘었어요 🙂', desc: '방향은 맞습니다. 아래 해설을 차분히 읽으며 헷갈린 부분을 정리해 봅시다.' },
-    { min: 1, title: '지금이 배울 때 📖', desc: '모르는 것은 부끄러운 일이 아닙니다. 해설을 읽고 공동체에서 함께 나눠보세요.' },
-    { min: 0, title: '함께 시작해요 🌱', desc: '오늘이 첫걸음입니다. 해설을 천천히 읽고, 궁금한 점은 목회자에게 물어보세요.' },
-  ];
-
+  // ── 제출 · 정답 목록 ──────────────────────────────────
   function finish() {
-    const score = correctCount(answers);
-
-    // 점수 링
-    const r = 52;
-    const c = 2 * Math.PI * r;
-    const ring = $('score-ring');
-    ring.style.strokeDasharray = c;
-    ring.style.strokeDashoffset = c;
-    $('score-num').textContent = score;
-    $('score-den').textContent = '/ ' + TOTAL + ' 문항';
-    requestAnimationFrame(() =>
-      setTimeout(() => {
-        ring.style.strokeDashoffset = c * (1 - score / TOTAL);
-      }, 120)
-    );
-
-    const tier = TIERS.find((t) => score >= t.min);
-    $('score-title').textContent = tier.title;
-    $('score-desc').textContent = tier.desc;
-
-    // 문항별 해설
     const box = $('review');
     box.innerHTML = '';
     QUESTIONS.forEach((q, i) => {
-      const ok = answers[i] === q.answer;
       const item = el('div', 'review-item');
 
       const head = el('div', 'head');
-      const badge = el('span', 'badge ' + (ok ? 'ok' : 'no'));
-      badge.textContent = ok ? '✓' : '✗';
-      const ht = el('span');
-      ht.textContent = 'Q' + (i + 1);
-      head.append(badge, ht);
+      head.textContent = 'Q' + (i + 1);
 
       const qt = el('div', 'q');
       qt.textContent = q.q;
 
       const ans = el('div', 'ans');
-      if (ok) {
-        const k = el('span', 'k');
-        k.textContent = '내 답 · ';
-        const right = el('span', 'right');
-        right.textContent = numMark(q.answer) + ' ' + q.options[q.answer];
-        ans.append(k, right);
-      } else {
-        const k1 = el('span', 'k');
-        k1.textContent = '내 답 · ';
-        const mine = el('span', 'mine');
-        mine.textContent =
-          answers[i] == null
-            ? '무응답'
-            : numMark(answers[i]) + ' ' + q.options[answers[i]];
-        const br = el('br');
-        const k2 = el('span', 'k');
-        k2.textContent = '정답 · ';
-        const right = el('span', 'right');
-        right.textContent = numMark(q.answer) + ' ' + q.options[q.answer];
-        ans.append(k1, mine, br, k2, right);
-      }
+      const k = el('span', 'k');
+      k.textContent = '정답 · ';
+      const right = el('span', 'right');
+      right.textContent = numMark(q.answer) + ' ' + q.options[q.answer];
+      ans.append(k, right);
 
-      const why = el('p', 'why');
-      why.textContent = q.explain;
-
-      item.append(head, qt, ans, why);
+      item.append(head, qt, ans);
       box.appendChild(item);
     });
 
     show('result');
-    submit(score);
+    submit();
   }
 
-  function numMark(i) {
-    return ['①', '②', '③', '④', '⑤', '⑥'][i] || i + 1 + '.';
-  }
-
-  // ── 서버 저장 ─────────────────────────────────────────
-  async function submit(score) {
+  async function submit() {
     const payload = {
       session: CFG.QUIZ_SESSION || 'default',
       answers: answers.map((a) => (a == null ? -1 : a)),
-      score,
     };
 
     if (!db) {
       // 오프라인 모드: 브라우저에만 저장
-      const local = JSON.parse(localStorage.getItem('jjc-quiz-local') || '[]');
-      local.push({ ...payload, created_at: new Date().toISOString() });
-      localStorage.setItem('jjc-quiz-local', JSON.stringify(local));
+      const local = JSON.parse(localStorage.getItem(KEY_LOCAL) || '[]');
+      local.push(payload);
+      localStorage.setItem(KEY_LOCAL, JSON.stringify(local));
       return;
     }
 
     try {
       const prev = localStorage.getItem(KEY_ROW);
       if (prev) {
-        // 같은 기기에서 다시 풀면 기존 기록을 갱신 (인원 중복 방지)
+        // 같은 기기에서 다시 풀면 인원이 중복되지 않도록 기존 기록을 갱신
         const { error } = await db.from('responses').update(payload).eq('id', prev);
         if (error) throw error;
       } else {
@@ -261,23 +188,23 @@
       }
     } catch (e) {
       console.error('[quiz] 저장 실패', e);
-      toast('결과 저장에 실패했어요. 통계에 반영되지 않을 수 있습니다.');
+      toast('응답 저장에 실패했어요. 통계에 반영되지 않을 수 있습니다.');
     }
   }
 
-  // ── 통계 ──────────────────────────────────────────────
+  // ── 전체 응답 현황 ────────────────────────────────────
   async function fetchRows() {
     if (!db) {
-      rows = JSON.parse(localStorage.getItem('jjc-quiz-local') || '[]');
+      rows = JSON.parse(localStorage.getItem(KEY_LOCAL) || '[]');
       return;
     }
     const { data, error } = await db
       .from('responses')
-      .select('answers, score')
+      .select('answers')
       .eq('session', CFG.QUIZ_SESSION || 'default')
       .limit(5000);
     if (error) {
-      console.error('[quiz] 통계 조회 실패', error);
+      console.error('[quiz] 응답 조회 실패', error);
       return;
     }
     rows = data || [];
@@ -288,6 +215,7 @@
     renderStats();
   }
 
+  const STATS_MARKUP = $('stats-body').innerHTML;
   let lastTotal = -1;
 
   function renderStats() {
@@ -301,19 +229,9 @@
       lastTotal = 0;
       return;
     }
-    // 빈 화면이었다면 원래 마크업 복구
-    if (!$('s-total')) {
-      body.innerHTML = STATS_MARKUP;
-    }
-
-    const scores = rows.map((r) => r.score || 0);
-    const sum = scores.reduce((a, b) => a + b, 0);
-    const perfect = scores.filter((s) => s === TOTAL).length;
+    if (!$('s-total')) body.innerHTML = STATS_MARKUP; // 빈 화면이었다면 복구
 
     $('s-total').textContent = n;
-    $('s-avg').textContent = (sum / n).toFixed(1);
-    $('s-perfect').textContent = perfect;
-
     if (lastTotal >= 0 && n > lastTotal) {
       const b = $('s-total');
       b.classList.remove('bump');
@@ -322,31 +240,6 @@
     }
     lastTotal = n;
 
-    // 점수 분포
-    const buckets = Array(TOTAL + 1).fill(0);
-    scores.forEach((s) => {
-      if (s >= 0 && s <= TOTAL) buckets[s]++;
-    });
-    const peak = Math.max(...buckets);
-    const dist = $('dist');
-    const labels = $('dist-labels');
-    dist.innerHTML = '';
-    labels.innerHTML = '';
-    buckets.forEach((v, s) => {
-      const col = el('div', 'col' + (v === peak && v > 0 ? ' peak' : ''));
-      const num = el('span', 'n');
-      num.textContent = v || '';
-      const bar = el('div', 'bar');
-      bar.style.height = peak ? Math.max(4, (v / peak) * 88) + '%' : '4px';
-      col.append(num, bar);
-      dist.appendChild(col);
-
-      const lb = el('span');
-      lb.textContent = s + '점';
-      labels.appendChild(lb);
-    });
-
-    // 문항별 정답률
     const box = $('qstats');
     box.innerHTML = '';
     QUESTIONS.forEach((q, i) => {
@@ -371,7 +264,8 @@
       label.appendChild(document.createTextNode(q.q));
       const rt = el('div', 'rate');
       rt.textContent = Math.round(rate) + '%';
-      rt.style.color = rate >= 70 ? 'var(--good)' : rate >= 40 ? 'var(--accent-2)' : 'var(--bad)';
+      rt.style.color =
+        rate >= 70 ? 'var(--good)' : rate >= 40 ? 'var(--accent-2)' : 'var(--bad)';
       top.append(label, rt);
 
       const meter = el('div', 'meter');
@@ -385,19 +279,22 @@
           : 'linear-gradient(90deg,#fb7185,#fda4af)';
       meter.appendChild(fill);
 
+      // 선택지별 응답 분포 — 어느 오답으로 많이 몰렸는지 보이는 부분
       const bd = el('div', 'breakdown');
       counts.forEach((c, k) => {
         const pct = answered ? (c / answered) * 100 : 0;
         const row = el('div', 'brow' + (k === q.answer ? ' is-answer' : ''));
         const key = el('span', 'k');
         key.textContent = k + 1;
+        const text = el('span', 'otext');
+        text.textContent = q.options[k];
         const track = el('div', 'track');
         const ti = el('i');
         ti.style.width = pct + '%';
         track.appendChild(ti);
         const v = el('span', 'v');
         v.textContent = c + '명';
-        row.append(key, track, v);
+        row.append(key, text, v, track); // 그리드 배치 순서: 글 → 인원 → 막대
         bd.appendChild(row);
       });
 
@@ -405,9 +302,6 @@
       box.appendChild(card);
     });
   }
-
-  // 빈 상태에서 복구하기 위해 원본 마크업을 보관
-  const STATS_MARKUP = $('stats-body').innerHTML;
 
   // ── 실시간 구독 ───────────────────────────────────────
   function subscribe() {
@@ -426,33 +320,28 @@
       )
       .subscribe();
 
-    // 실시간이 끊겼을 때를 대비한 안전망
+    // 실시간 연결이 끊겼을 때를 대비한 안전망
     setInterval(() => {
       if (statsOpen) refreshStats();
     }, 20000);
   }
 
   // ── 버튼 배선 ─────────────────────────────────────────
-  $('btn-start').addEventListener('click', () => {
+  function start() {
     idx = 0;
     answers = [];
     renderQuestion();
     show('quiz');
-  });
-
-  $('btn-retry').addEventListener('click', () => {
-    idx = 0;
-    answers = [];
-    renderQuestion();
-    show('quiz');
-  });
+  }
+  $('btn-start').addEventListener('click', start);
+  $('btn-retry').addEventListener('click', start);
 
   $('btn-share').addEventListener('click', async () => {
     const url = location.href.split('#')[0];
-    const data = { title: '이단 예방 퀴즈', text: '나도 한번 풀어볼래?', url };
     try {
-      if (navigator.share) await navigator.share(data);
-      else {
+      if (navigator.share) {
+        await navigator.share({ title: '이단 예방 퀴즈', url });
+      } else {
         await navigator.clipboard.writeText(url);
         toast('링크를 복사했습니다');
       }
@@ -461,9 +350,9 @@
     }
   });
 
-  document.querySelectorAll('[data-goto]').forEach((b) =>
-    b.addEventListener('click', () => show(b.dataset.goto))
-  );
+  document
+    .querySelectorAll('[data-goto]')
+    .forEach((b) => b.addEventListener('click', () => show(b.dataset.goto)));
 
   // ── 시작 ──────────────────────────────────────────────
   if (!configured) {

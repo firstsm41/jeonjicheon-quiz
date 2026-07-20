@@ -97,22 +97,19 @@ body::after {
 /* 좁은 칸 안에서 글자가 세로로 쪼개지지 않도록 하는 공통 규칙.
    flex 자식은 min-width:auto 때문에 내용보다 좁아질 수 있어 0으로 풉니다. */
 .meta,
-.stat,
 .btn,
 .step,
 .brow,
-.qstat .label,
-.dist .col {
+.brow .otext,
+.qstat .label {
   min-width: 0;
 }
 .btn,
 .eyebrow,
 .meta b,
 .meta span,
-.stat b,
-.stat span,
-.dist-labels span,
-.dist .col .n,
+.count-card b,
+.count-card span,
 .brow .v,
 .brow .k,
 .qstat .rate,
@@ -430,60 +427,32 @@ body::after {
   color: var(--text-dim);
 }
 
-/* ── 결과 화면 ───────────────────────────── */
-.score-card {
+/* ── 제출 완료 화면 ──────────────────────── */
+.done-card {
   padding: 34px 24px 28px;
   text-align: center;
   margin-bottom: 14px;
 }
-.ring {
-  position: relative;
-  width: 148px;
-  height: 148px;
-  margin: 0 auto 18px;
-}
-.ring svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-.ring .track {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.09);
-  stroke-width: 11;
-}
-.ring .bar {
-  fill: none;
-  stroke: url(#scoreGrad);
-  stroke-width: 11;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1.1s var(--ease);
-}
-.ring .inner {
-  position: absolute;
-  inset: 0;
+.done-card .check {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
   display: grid;
-  place-content: center;
-  gap: 0;
-}
-.ring .inner b {
-  font-size: 42px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 30px;
   font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
+  color: var(--good);
+  background: rgba(74, 222, 128, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.35);
 }
-.ring .inner span {
-  font-size: 12.5px;
-  color: var(--text-faint);
-  margin-top: 4px;
-}
-.score-card h2 {
-  margin: 4px 0 6px;
-  font-size: 21px;
+.done-card h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
-.score-card p {
+.done-card p {
   margin: 0;
   font-size: 14.5px;
   color: var(--text-dim);
@@ -510,30 +479,11 @@ body::after {
   border: 1px solid var(--border);
 }
 .review-item .head {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dim);
-  margin-bottom: 7px;
-}
-.badge {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
   font-size: 12px;
-  font-weight: 800;
-}
-.badge.ok {
-  background: rgba(74, 222, 128, 0.18);
-  color: var(--good);
-}
-.badge.no {
-  background: rgba(251, 113, 133, 0.18);
-  color: var(--bad);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 7px;
 }
 .review-item .q {
   font-size: 14.5px;
@@ -557,14 +507,6 @@ body::after {
   color: var(--bad);
   font-weight: 600;
 }
-.review-item .why {
-  margin: 10px 0 0;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border);
-  font-size: 13.5px;
-  line-height: 1.7;
-  color: var(--text-dim);
-}
 
 /* ── 통계 화면 ───────────────────────────── */
 .stat-head {
@@ -581,33 +523,27 @@ body::after {
   letter-spacing: -0.03em;
 }
 
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 8px;
+/* 실시간으로 올라가는 참여 인원 */
+.count-card {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
 }
-.stat {
-  padding: 17px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  text-align: center;
-}
-.stat b {
-  display: block;
-  font-size: 26px;
+.count-card b {
+  display: inline-block;
+  font-size: 44px;
   font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.2;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  color: var(--accent-2);
   font-variant-numeric: tabular-nums;
 }
-.stat span {
-  font-size: 11.5px;
-  color: var(--text-faint);
-}
-.stat.live b {
-  color: var(--accent-2);
+.count-card span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dim);
 }
 .bump {
   animation: bump 0.55s var(--ease);
@@ -624,53 +560,7 @@ body::after {
   }
 }
 
-/* 점수 분포 */
-.dist {
-  display: flex;
-  align-items: flex-end;
-  gap: 7px;
-  height: 132px;
-  padding: 16px 15px 0;
-  margin-top: 12px;
-}
-.dist .col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  height: 100%;
-  gap: 6px;
-}
-.dist .col .n {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-}
-.dist .col .bar {
-  width: 100%;
-  min-height: 4px;
-  border-radius: 7px 7px 3px 3px;
-  background: linear-gradient(180deg, #a78bfa, rgba(167, 139, 250, 0.28));
-  transition: height 0.6s var(--ease);
-}
-.dist .col.peak .bar {
-  background: linear-gradient(180deg, #f0b23f, rgba(240, 178, 63, 0.3));
-}
-.dist-labels {
-  display: flex;
-  gap: 7px;
-  padding: 8px 15px 15px;
-}
-.dist-labels span {
-  flex: 1;
-  text-align: center;
-  font-size: 11.5px;
-  color: var(--text-faint);
-}
-
-/* 문항별 정답률 */
+/* 문항별 응답 현황 */
 .qstats {
   display: flex;
   flex-direction: column;
@@ -726,17 +616,22 @@ body::after {
 .qstat .breakdown {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 11px;
 }
+/* [번호] 선택지 글 ...... N명
+        ▓▓▓▓▓░░░░░░░░░           */
 .brow {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  row-gap: 6px;
+  align-items: start;
   font-size: 12.5px;
+  line-height: 1.45;
   color: var(--text-dim);
 }
 .brow .k {
-  flex: 0 0 18px;
+  grid-column: 1;
   height: 18px;
   display: grid;
   place-items: center;
@@ -749,9 +644,24 @@ body::after {
   background: rgba(74, 222, 128, 0.2);
   color: var(--good);
 }
+.brow .otext {
+  grid-column: 2;
+}
+.brow.is-answer .otext {
+  color: var(--text);
+  font-weight: 600;
+}
+.brow .v {
+  grid-column: 3;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+}
 .brow .track {
-  flex: 1;
+  grid-column: 2 / 4;
   height: 6px;
+  margin-top: 1px;
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -765,12 +675,6 @@ body::after {
 }
 .brow.is-answer .track i {
   background: var(--good);
-}
-.brow .v {
-  flex: 0 0 42px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
 }
 
 .empty {

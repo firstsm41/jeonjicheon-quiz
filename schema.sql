@@ -2,11 +2,12 @@
 --  Supabase SQL Editor 에 그대로 붙여넣고 실행하세요.
 -- ─────────────────────────────────────────────────────────────
 
+-- answers 는 문항 순서대로의 선택지 번호(0부터). 무응답은 -1 로 저장됩니다.
+-- 점수는 저장하지 않습니다 — 개인 점수가 아니라 문항별 응답 분포만 사용합니다.
 create table if not exists public.responses (
   id         uuid primary key default gen_random_uuid(),
   session    text        not null default 'default',
   answers    smallint[]  not null,
-  score      smallint    not null check (score >= 0 and score <= 20),
   created_at timestamptz not null default now()
 );
 
