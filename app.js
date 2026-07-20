@@ -110,11 +110,15 @@
 
     const ok = picked === q.answer;
     const fb = el('div', 'feedback ' + (ok ? 'ok' : 'no'));
-    const v = el('span', 'verdict');
-    v.textContent = ok ? '✓ 정답입니다' : '✗ 다시 살펴볼까요';
     const p = el('p');
     p.textContent = q.explain;
-    fb.append(v, p);
+    // 정답일 때만 표시. 틀렸을 때는 선택지 색으로 이미 드러나므로 해설만 보여줍니다.
+    if (ok) {
+      const v = el('span', 'verdict');
+      v.textContent = '✓ 정답입니다';
+      fb.appendChild(v);
+    }
+    fb.appendChild(p);
     $('q-feedback').innerHTML = '';
     $('q-feedback').appendChild(fb);
 
