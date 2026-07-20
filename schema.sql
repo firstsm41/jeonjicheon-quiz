@@ -1,0 +1,40 @@
+-- ─────────────────────────────────────────────────────────────
+--  Supabase SQL Editor 에 그대로 붙여넣고 실행하세요.
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists public.responses (
+  id         uuid primary key default gen_random_uuid(),
+  session    text        not null default 'default',
+  answers    smallint[]  not null,
+  score      smallint    not null check (score >= 0 and score <= 20),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists responses_session_idx on public.responses (session);
+
+-- Row Level Security: 익명 사용자에게 딱 필요한 권한만 부여
+alter table public.responses enable row level security;
+
+drop policy if exists "anyone can read" on public.responses;
+create policy "anyone can read"
+  on public.responses for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "anyone can insert" on public.responses;
+create policy "anyone can insert"
+  on public.responses for insert
+  to anon, authenticated
+  with check (true);
+
+-- 같은 기기에서 다시 풀었을 때 기존 기록을 갱신하기 위한 정책.
+-- (익명 사용자이므로 update 는 허용하되 delete 는 막습니다)
+drop policy if exists "anyone can update" on public.responses;
+create policy "anyone can update"
+  on public.responses for update
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+-- 실시간 구독 활성화
+alter publication supabase_realtime add table public.responses;

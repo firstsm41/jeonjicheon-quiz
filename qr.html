@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR 안내 · 이단 예방 퀴즈</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <style>
+      /* 인쇄 · 빔프로젝터용 안내 페이지 */
+      * { box-sizing: border-box; margin: 0; }
+      body {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 40px 24px;
+        background: #f6f4fb;
+        color: #1a1030;
+        font-family: 'Pretendard Variable', Pretendard, -apple-system,
+          'Apple SD Gothic Neo', sans-serif;
+        word-break: keep-all;
+        text-align: center;
+      }
+      .poster {
+        width: 100%;
+        max-width: 520px;
+        padding: 48px 36px 40px;
+        background: #fff;
+        border-radius: 30px;
+        box-shadow: 0 30px 70px -30px rgba(26, 16, 48, 0.35);
+      }
+      .kicker {
+        display: inline-block;
+        padding: 7px 16px;
+        border-radius: 999px;
+        background: #efe9ff;
+        color: #6d4fd6;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      h1 {
+        margin: 20px 0 10px;
+        font-size: clamp(30px, 8vw, 42px);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.24;
+      }
+      h1 em {
+        font-style: normal;
+        background: linear-gradient(100deg, #7c5cff, #e09a2a);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .sub { color: #6b6383; font-size: 16px; line-height: 1.65; }
+      .qr {
+        width: min(300px, 74vw);
+        margin: 32px auto 22px;
+        padding: 18px;
+        border: 2px solid #ece8f7;
+        border-radius: 24px;
+      }
+      .qr img { width: 100%; display: block; }
+      .url {
+        display: inline-block;
+        padding: 12px 22px;
+        border-radius: 14px;
+        background: #1a1030;
+        color: #fff;
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+      }
+      .steps {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+        text-align: left;
+      }
+      .step {
+        flex: 1;
+        padding: 14px 12px;
+        border-radius: 14px;
+        background: #f7f5fd;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #4b4463;
+      }
+      .step b {
+        display: block;
+        color: #7c5cff;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+      @media (max-width: 480px) {
+        .steps { flex-direction: column; gap: 8px; }
+        .step { display: flex; align-items: baseline; gap: 10px; }
+        .step b { margin-bottom: 0; flex: 0 0 auto; }
+      }
+      @media print {
+        body { background: #fff; padding: 0; }
+        .poster { box-shadow: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="poster">
+      <span class="kicker">🕊️ 전지천 · 이단 예방 교육</span>
+      <h1>휴대폰으로<br /><em>QR을 찍어주세요</em></h1>
+      <p class="sub">5문항 · 약 2분 소요 · 완전 익명</p>
+
+      <div class="qr"><img src="qr.png" alt="퀴즈 페이지 QR 코드" /></div>
+
+      <a class="url" href="https://xn--ly5bu5a00d.com/">전지천.com</a>
+
+      <div class="steps">
+        <div class="step"><b>STEP 1</b>카메라 앱으로 QR을 비춥니다</div>
+        <div class="step"><b>STEP 2</b>5문항을 차례로 풀어요</div>
+        <div class="step"><b>STEP 3</b>결과 보기로 함께 나눕니다</div>
+      </div>
+    </div>
+  </body>
+</html>
