@@ -64,7 +64,6 @@
 
     $('q-now').textContent = idx + 1;
     $('q-total').textContent = TOTAL;
-    $('q-score').textContent = '맞힌 개수 ' + correctCount(answers);
     $('q-bar').style.width = (idx / TOTAL) * 100 + '%';
     $('q-text').textContent = q.q;
     $('q-feedback').innerHTML = '';
@@ -119,7 +118,6 @@
     $('q-feedback').innerHTML = '';
     $('q-feedback').appendChild(fb);
 
-    $('q-score').textContent = '맞힌 개수 ' + correctCount(answers);
     $('q-bar').style.width = ((idx + 1) / TOTAL) * 100 + '%';
     $('btn-next').textContent = idx + 1 < TOTAL ? '다음 문항 →' : '결과 확인하기';
   }
