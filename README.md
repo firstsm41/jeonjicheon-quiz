@@ -45,39 +45,27 @@ window.APP_CONFIG = {
 
 ---
 
-## 2. GitHub Pages 배포
+## 2. 배포
+
+`main` 브랜치에 푸시하면 GitHub Actions([.github/workflows/deploy.yml](.github/workflows/deploy.yml))가
+자동으로 배포합니다. 저장소 **Actions** 탭에서 수동 실행도 됩니다.
+
+**공개 주소** — https://firstsm41.github.io/jeonjicheon-quiz/
 
 ```bash
-git init
 git add -A
-git commit -m "이단 예방 퀴즈"
-gh repo create <저장소이름> --public --source=. --push
+git commit -m "변경 내용"
+git push
 ```
 
-GitHub 저장소 → **Settings → Pages** → Source 를 `main` 브랜치 `/ (root)` 로 지정합니다.
+### 나중에 커스텀 도메인을 붙이려면
 
----
-
-## 3. 전지천.com 연결
-
-`CNAME` 파일에 도메인이 이미 들어 있습니다 (한글 도메인의 퓨니코드 표기):
-
-```
-xn--ly5bu5a00d.com
-```
-
-도메인 등록 기관(가비아 등) DNS 설정에서 아래 레코드를 추가하세요.
-
-| 타입  | 호스트 | 값                     |
-| ----- | ------ | ---------------------- |
-| A     | @      | 185.199.108.153        |
-| A     | @      | 185.199.109.153        |
-| A     | @      | 185.199.110.153        |
-| A     | @      | 185.199.111.153        |
-| CNAME | www    | `<사용자명>.github.io.` |
-
-그다음 **Settings → Pages → Custom domain** 에 `xn--ly5bu5a00d.com` 을 입력하고
-**Enforce HTTPS** 를 켭니다. 인증서 발급까지 보통 10분~1시간 걸립니다.
+1. 저장소 루트에 `CNAME` 파일을 만들고 도메인을 한 줄 적습니다
+   (한글 도메인은 퓨니코드로. 예: `전지천.com` → `xn--ly5bu5a00d.com`)
+2. 도메인 등록 기관(가비아 등) DNS에 A 레코드 4개를 추가합니다
+   — 호스트는 모두 `@`, 값은 `185.199.108.153` / `109.153` / `110.153` / `111.153`
+3. 반영되면 **Settings → Pages** 에서 **Enforce HTTPS** 를 켭니다
+4. `qr.png` / `qr.svg` 를 새 주소로 다시 만듭니다 (아래 "QR 코드 다시 만들기" 참고)
 
 ---
 
@@ -104,7 +92,7 @@ xn--ly5bu5a00d.com
 pip install segno
 python3 -c "
 import segno
-q = segno.make('https://xn--ly5bu5a00d.com/', error='h')
+q = segno.make('https://firstsm41.github.io/jeonjicheon-quiz/', error='h')
 q.save('qr.svg', scale=1, border=2, dark='#1a1030', light=None)
 q.save('qr.png', scale=16, border=3, dark='#1a1030', light='#ffffff')
 "
