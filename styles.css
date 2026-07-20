@@ -46,8 +46,12 @@ body {
   font-size: 16px;
   line-height: 1.62;
   letter-spacing: -0.011em;
+  /* 한글이 어절 단위로만 줄바꿈되도록 (글자 단위로 쪼개지지 않게) */
   word-break: keep-all;
+  overflow-wrap: break-word;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* 배경 오로라 */
@@ -79,13 +83,43 @@ body::after {
   background: radial-gradient(circle, rgba(240, 150, 63, 0.24), transparent 70%);
 }
 
+/* 모바일 앱 폭 기준. 데스크톱에서도 휴대폰 화면처럼 가운데 정렬됩니다. */
 .shell {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 640px;
+  max-width: 460px;
   margin: 0 auto;
-  padding: 26px 20px 64px;
+  padding: calc(22px + env(safe-area-inset-top)) 18px
+    calc(56px + env(safe-area-inset-bottom));
+}
+
+/* 좁은 칸 안에서 글자가 세로로 쪼개지지 않도록 하는 공통 규칙.
+   flex 자식은 min-width:auto 때문에 내용보다 좁아질 수 있어 0으로 풉니다. */
+.meta,
+.stat,
+.btn,
+.step,
+.brow,
+.qstat .label,
+.dist .col {
+  min-width: 0;
+}
+.btn,
+.eyebrow,
+.meta b,
+.meta span,
+.stat b,
+.stat span,
+.dist-labels span,
+.dist .col .n,
+.brow .v,
+.brow .k,
+.qstat .rate,
+.qstat .label i,
+.topbar span,
+.section-title {
+  white-space: nowrap;
 }
 
 /* ── 화면 전환 ───────────────────────────── */

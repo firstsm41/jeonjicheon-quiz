@@ -64,42 +64,32 @@
         border-radius: 24px;
       }
       .qr img { width: 100%; display: block; }
-      .url {
-        display: inline-block;
-        padding: 12px 22px;
-        border-radius: 14px;
-        background: #1a1030;
-        color: #fff;
-        font-size: 19px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        text-decoration: none;
-      }
+      /* 세로로 쌓아 각 단계의 글씨가 한 줄로 읽히도록 */
       .steps {
         display: flex;
-        gap: 10px;
-        margin-top: 30px;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
         text-align: left;
       }
       .step {
-        flex: 1;
-        padding: 14px 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        min-width: 0;
+        padding: 13px 16px;
         border-radius: 14px;
         background: #f7f5fd;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.5;
         color: #4b4463;
       }
       .step b {
-        display: block;
+        flex: 0 0 auto;
         color: #7c5cff;
         font-size: 12px;
-        margin-bottom: 4px;
-      }
-      @media (max-width: 480px) {
-        .steps { flex-direction: column; gap: 8px; }
-        .step { display: flex; align-items: baseline; gap: 10px; }
-        .step b { margin-bottom: 0; flex: 0 0 auto; }
+        letter-spacing: 0.03em;
+        white-space: nowrap;
       }
       @media print {
         body { background: #fff; padding: 0; }
@@ -114,8 +104,6 @@
       <p class="sub">5문항 · 약 2분 소요 · 완전 익명</p>
 
       <div class="qr"><img src="qr.png" alt="퀴즈 페이지 QR 코드" /></div>
-
-      <a class="url" href="https://xn--ly5bu5a00d.com/">전지천.com</a>
 
       <div class="steps">
         <div class="step"><b>STEP 1</b>카메라 앱으로 QR을 비춥니다</div>

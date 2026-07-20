@@ -2,13 +2,24 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>이단 예방 퀴즈 · 전지천</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <title>이단 예방 퀴즈</title>
     <meta name="description" content="5문항으로 점검하는 이단 분별력. QR로 접속해 바로 풀고, 실시간 누적 통계를 확인하세요." />
     <meta name="theme-color" content="#0b0a14" />
 
+    <!-- 홈 화면에 추가했을 때 앱처럼 동작하도록 -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="이단 예방 퀴즈" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon-180.png" />
+
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="이단 예방 퀴즈 · 전지천" />
+    <meta property="og:title" content="이단 예방 퀴즈" />
     <meta property="og:description" content="5문항으로 점검하는 이단 분별력. 실시간 누적 통계 제공." />
     <meta property="og:locale" content="ko_KR" />
 
@@ -132,10 +143,7 @@
           <button class="btn ghost" data-goto="intro">← 처음으로</button>
         </div>
 
-        <p class="footer">
-          통계는 새 답안이 들어오는 즉시 자동으로 갱신됩니다.<br />
-          전지천 · 이단 예방 교육
-        </p>
+        <p class="footer">통계는 새 답안이 들어오는 즉시 자동으로 갱신됩니다.</p>
       </section>
     </div>
 
