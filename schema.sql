@@ -37,5 +37,37 @@ create policy "anyone can update"
   using (true)
   with check (true);
 
+-- ─────────────────────────────────────────────────────────────
+--  진행자 설정 (회차별 1행)
+--  show_results 가 true 일 때만 참여자에게 '결과 보기'가 노출됩니다.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.settings (
+  session      text primary key,
+  show_results boolean     not null default false,
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.settings enable row level security;
+
+drop policy if exists "settings read" on public.settings;
+create policy "settings read"
+  on public.settings for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "settings write" on public.settings;
+create policy "settings write"
+  on public.settings for insert
+  to anon, authenticated
+  with check (true);
+
+drop policy if exists "settings update" on public.settings;
+create policy "settings update"
+  on public.settings for update
+  to anon, authenticated
+  using (true)
+  with check (true);
+
 -- 실시간 구독 활성화
 alter publication supabase_realtime add table public.responses;
+alter publication supabase_realtime add table public.settings;

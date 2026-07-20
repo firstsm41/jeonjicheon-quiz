@@ -35,13 +35,28 @@
   </head>
   <body>
     <div class="shell">
+      <!-- ── 진행자 모드 바 (평소에는 숨겨져 있습니다) ── -->
+      <div class="admin-bar" id="admin-bar" hidden>
+        <div class="admin-top">
+          <span class="admin-tag">🔑 진행자 모드</span>
+          <button type="button" class="admin-exit" id="btn-admin-exit">나가기</button>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-results" />
+          <span class="track"><span class="thumb"></span></span>
+          <span class="switch-text">
+            <b>참여자에게 결과 공개</b>
+            <i id="toggle-desc">지금은 진행자만 결과를 볼 수 있습니다</i>
+          </span>
+        </label>
+      </div>
+
       <!-- ── 시작 ─────────────────────────────── -->
       <section id="screen-intro" class="screen active">
         <div class="card hero">
           <div class="mark">🕊️</div>
           <span class="eyebrow"><i class="dot"></i> 익명으로 진행됩니다</span>
           <h1>이단 분별력<br /><em>5문항 체크</em></h1>
-          <p>정통 신앙의 기준을 함께 점검해 봅니다.<br />2분이면 충분해요.</p>
 
           <div class="meta-row">
             <div class="meta"><b>5</b><span>문항</span></div>
@@ -50,7 +65,7 @@
           </div>
 
           <button class="btn" id="btn-start">퀴즈 시작하기</button>
-          <div class="btn-row">
+          <div class="btn-row results-gate" hidden>
             <button class="btn ghost" data-goto="stats">📊 결과 보기</button>
           </div>
 
@@ -85,7 +100,7 @@
           <p>참여해 주셔서 감사합니다.</p>
         </div>
 
-        <div class="btn-row">
+        <div class="btn-row results-gate" hidden>
           <button class="btn" data-goto="stats">📊 전체 응답 보기</button>
         </div>
         <div class="btn-row">
@@ -123,6 +138,27 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- ── 진행자 비밀번호 ─────────────────────── -->
+    <div class="modal" id="pw-modal" hidden>
+      <div class="modal-card">
+        <h3>비밀번호 입력하세요</h3>
+        <p class="modal-sub">진행자용 기능입니다.</p>
+        <input
+          type="password"
+          id="pw-input"
+          inputmode="numeric"
+          autocomplete="off"
+          maxlength="8"
+          placeholder="••••"
+        />
+        <p class="modal-err" id="pw-err" hidden>비밀번호가 올바르지 않습니다.</p>
+        <div class="btn-row">
+          <button class="btn ghost" type="button" id="pw-cancel">취소</button>
+          <button class="btn" type="button" id="pw-ok">확인</button>
+        </div>
+      </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
     <script src="config.js"></script>

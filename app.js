@@ -11,8 +11,15 @@
   const CFG = window.APP_CONFIG || {};
   const QUESTIONS = window.QUESTIONS || [];
   const TOTAL = QUESTIONS.length;
-  const KEY_ROW = 'jjc-quiz-row-' + (CFG.QUIZ_SESSION || 'default');
+  const SESSION = CFG.QUIZ_SESSION || 'default';
+
   const KEY_LOCAL = 'jjc-quiz-local';
+  const KEY_DONE = 'jjc-done-' + SESSION; // 이 기기에서 제출을 마쳤는지
+  const KEY_ADMIN = 'jjc-admin'; // 진행자 모드 해제 여부
+  const KEY_SHOW = 'jjc-show-' + SESSION; // 오프라인 모드용 공개 설정
+
+  const ADMIN_PIN = '2345';
+  const LONG_PRESS_MS = 800;
 
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls) => {
@@ -42,6 +49,11 @@
   let rows = []; // 전체 응답
   let statsOpen = false;
 
+  let isAdmin = localStorage.getItem(KEY_ADMIN) === '1'; // 진행자 기기 여부
+  let hasSubmitted = localStorage.getItem(KEY_DONE) === '1'; // 제출 완료 여부
+  let showResults = false; // 참여자에게 결과를 공개할지 (진행자가 제어)
+  let settingsTableOk = true; // settings 테이블 사용 가능 여부
+
   // ── 화면 전환 ─────────────────────────────────────────
   function show(name) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
@@ -59,6 +71,128 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
   }
+
+  // ── 진행자 모드 · 결과 공개 제어 ──────────────────────
+  //
+  // 참여자에게 '결과 보기'가 보이는 조건은 두 가지를 모두 만족할 때입니다.
+  //   1) 이 기기에서 퀴즈를 끝까지 풀고 제출했을 것
+  //   2) 진행자가 결과 공개 토글을 켰을 것
+  // 진행자 본인은 조건과 무관하게 언제든 볼 수 있습니다.
+  function canSeeResults() {
+    return isAdmin || (hasSubmitted && showResults);
+  }
+
+  function applyVisibility() {
+    const allowed = canSeeResults();
+    document
+      .querySelectorAll('.results-gate')
+      .forEach((n) => (n.hidden = !allowed));
+
+    $('admin-bar').hidden = !isAdmin;
+    $('toggle-results').checked = showResults;
+    $('toggle-desc').textContent = showResults
+      ? '참여자도 결과 화면을 볼 수 있습니다'
+      : '지금은 진행자만 결과를 볼 수 있습니다';
+
+    // 공개가 꺼졌는데 참여자가 결과 화면에 머물러 있으면 돌려보냅니다
+    if (!allowed && statsOpen) {
+      show('intro');
+      toast('진행자가 결과 공개를 종료했습니다');
+    }
+  }
+
+  async function loadSettings() {
+    if (!db) {
+      showResults = localStorage.getItem(KEY_SHOW) === '1';
+      return;
+    }
+    const { data, error } = await db
+      .from('settings')
+      .select('show_results')
+      .eq('session', SESSION)
+      .maybeSingle();
+
+    if (error) {
+      // settings 테이블이 아직 없는 경우 — 기기 로컬 설정으로 대체합니다
+      settingsTableOk = false;
+      showResults = localStorage.getItem(KEY_SHOW) === '1';
+      console.warn('[quiz] settings 테이블을 읽지 못했습니다. schema-settings.sql 을 실행하세요.', error.message);
+      return;
+    }
+    showResults = !!(data && data.show_results);
+  }
+
+  async function setShowResults(next) {
+    showResults = next;
+    localStorage.setItem(KEY_SHOW, next ? '1' : '0');
+    applyVisibility();
+
+    if (!db || !settingsTableOk) {
+      toast(next ? '이 기기에서만 공개됩니다' : '결과 공개를 껐습니다');
+      return;
+    }
+    const { error } = await db.from('settings').upsert({
+      session: SESSION,
+      show_results: next,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      console.error('[quiz] 설정 저장 실패', error);
+      toast('설정을 저장하지 못했습니다');
+      return;
+    }
+    toast(next ? '참여자에게 결과를 공개했습니다' : '결과 공개를 종료했습니다');
+  }
+
+  function enterAdmin() {
+    isAdmin = true;
+    localStorage.setItem(KEY_ADMIN, '1');
+    applyVisibility();
+    toast('진행자 모드로 전환되었습니다');
+  }
+
+  function exitAdmin() {
+    isAdmin = false;
+    localStorage.removeItem(KEY_ADMIN);
+    applyVisibility();
+    toast('진행자 모드를 종료했습니다');
+  }
+
+  // 비밀번호 모달
+  const pwModal = $('pw-modal');
+  function openPw() {
+    $('pw-input').value = '';
+    $('pw-err').hidden = true;
+    pwModal.hidden = false;
+    setTimeout(() => $('pw-input').focus(), 50);
+  }
+  function closePw() {
+    pwModal.hidden = true;
+  }
+  function submitPw() {
+    if ($('pw-input').value.trim() === ADMIN_PIN) {
+      closePw();
+      enterAdmin();
+    } else {
+      $('pw-err').hidden = false;
+      $('pw-input').value = '';
+      $('pw-input').focus();
+    }
+  }
+  $('pw-ok').addEventListener('click', submitPw);
+  $('pw-cancel').addEventListener('click', closePw);
+  $('pw-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitPw();
+    if (e.key === 'Escape') closePw();
+  });
+  pwModal.addEventListener('click', (e) => {
+    if (e.target === pwModal) closePw();
+  });
+
+  $('btn-admin-exit').addEventListener('click', exitAdmin);
+  $('toggle-results').addEventListener('change', (e) =>
+    setShowResults(e.target.checked)
+  );
 
   // ── 퀴즈 ──────────────────────────────────────────────
   function renderQuestion() {
@@ -157,37 +291,27 @@
     submit();
   }
 
+  // 제출할 때마다 새 행을 추가합니다 — 다시 풀면 참여 인원이 그만큼 누적됩니다.
   async function submit() {
     const payload = {
-      session: CFG.QUIZ_SESSION || 'default',
+      session: SESSION,
       answers: answers.map((a) => (a == null ? -1 : a)),
     };
 
+    hasSubmitted = true;
+    localStorage.setItem(KEY_DONE, '1');
+    applyVisibility();
+
     if (!db) {
-      // 오프라인 모드: 브라우저에만 저장
       const local = JSON.parse(localStorage.getItem(KEY_LOCAL) || '[]');
       local.push(payload);
       localStorage.setItem(KEY_LOCAL, JSON.stringify(local));
       return;
     }
 
-    try {
-      const prev = localStorage.getItem(KEY_ROW);
-      if (prev) {
-        // 같은 기기에서 다시 풀면 인원이 중복되지 않도록 기존 기록을 갱신
-        const { error } = await db.from('responses').update(payload).eq('id', prev);
-        if (error) throw error;
-      } else {
-        const { data, error } = await db
-          .from('responses')
-          .insert(payload)
-          .select('id')
-          .single();
-        if (error) throw error;
-        localStorage.setItem(KEY_ROW, data.id);
-      }
-    } catch (e) {
-      console.error('[quiz] 저장 실패', e);
+    const { error } = await db.from('responses').insert(payload);
+    if (error) {
+      console.error('[quiz] 저장 실패', error);
       toast('응답 저장에 실패했어요. 통계에 반영되지 않을 수 있습니다.');
     }
   }
@@ -309,13 +433,24 @@
       $('live-badge').style.display = 'none';
       return;
     }
-    db.channel('responses-live')
+    db.channel('quiz-live')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'responses' },
         () => {
           if (statsOpen) refreshStats();
           else fetchRows().then(() => ($('intro-count').textContent = rows.length));
+        }
+      )
+      // 진행자가 토글을 바꾸면 참여자 화면에 즉시 반영됩니다
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'settings' },
+        (payload) => {
+          if (payload.new && payload.new.session === SESSION) {
+            showResults = !!payload.new.show_results;
+            applyVisibility();
+          }
         }
       )
       .subscribe();
@@ -333,7 +468,42 @@
     renderQuestion();
     show('quiz');
   }
-  $('btn-start').addEventListener('click', start);
+
+  // '퀴즈 시작하기'를 길게 누르면 진행자 비밀번호 창이 열립니다.
+  // 짧게 누르면 평소대로 퀴즈가 시작됩니다.
+  const startBtn = $('btn-start');
+  let pressTimer = null;
+  let longFired = false;
+
+  function pressBegin() {
+    longFired = false;
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => {
+      longFired = true;
+      startBtn.classList.remove('holding');
+      if (navigator.vibrate) navigator.vibrate(15);
+      openPw();
+    }, LONG_PRESS_MS);
+    startBtn.classList.add('holding');
+  }
+  function pressCancel() {
+    clearTimeout(pressTimer);
+    startBtn.classList.remove('holding');
+  }
+
+  startBtn.addEventListener('pointerdown', pressBegin);
+  startBtn.addEventListener('pointerup', pressCancel);
+  startBtn.addEventListener('pointerleave', pressCancel);
+  startBtn.addEventListener('pointercancel', pressCancel);
+  startBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+  startBtn.addEventListener('click', () => {
+    if (longFired) {
+      longFired = false; // 길게 누른 경우엔 퀴즈를 시작하지 않습니다
+      return;
+    }
+    start();
+  });
+
   $('btn-retry').addEventListener('click', start);
 
   $('btn-share').addEventListener('click', async () => {
@@ -358,6 +528,8 @@
   if (!configured) {
     console.warn('[quiz] config.js 에 Supabase 정보가 없어 오프라인 모드로 동작합니다.');
   }
+  applyVisibility();
+  loadSettings().then(applyVisibility);
   fetchRows().then(renderStats);
   subscribe();
 })();
