@@ -28,6 +28,16 @@
     return n;
   };
   const numMark = (i) => ['①', '②', '③', '④', '⑤', '⑥'][i] || i + 1 + '.';
+  const isText = (q) => q && q.type === 'text';
+
+  // 주관식 답 비교·묶음을 위한 정규화 (공백 제거 + 소문자)
+  const norm = (s) => (s || '').toString().trim().replace(/\s+/g, ' ').toLowerCase();
+  function isAcceptedText(q, value) {
+    const v = norm(value);
+    if (!v) return false;
+    const pool = [q.answer, ...(q.accept || [])].map(norm);
+    return pool.includes(v);
+  }
 
   // ── Supabase 연결 (설정이 비어 있으면 오프라인 모드) ──────────
   const configured =
@@ -45,7 +55,8 @@
   let idx = 0; // 현재 문항
   let picked = null; // 현재 선택지
   let locked = false; // 정답 공개 여부
-  let answers = []; // 이번 참여자의 답안
+  let answers = []; // 이번 참여자의 선택지 답안 (주관식은 -1)
+  let openAnswers = {}; // 이번 참여자의 주관식 답안 {문항인덱스: '입력'}
   let rows = []; // 전체 응답
   let statsOpen = false;
 
@@ -207,17 +218,39 @@
 
     const box = $('q-options');
     box.innerHTML = '';
-    q.options.forEach((text, i) => {
-      const b = el('button', 'opt');
-      b.type = 'button';
-      const num = el('span', 'num');
-      num.textContent = i + 1;
-      const label = el('span');
-      label.textContent = text;
-      b.append(num, label);
-      b.addEventListener('click', () => choose(i));
-      box.appendChild(b);
-    });
+
+    if (isText(q)) {
+      // 주관식: 입력창 하나
+      const wrap = el('div', 'text-answer');
+      const input = el('input');
+      input.type = 'text';
+      input.id = 'q-input';
+      input.autocomplete = 'off';
+      input.placeholder = q.placeholder || '답을 입력하세요';
+      input.value = openAnswers[idx] || '';
+      input.addEventListener('input', () => {
+        if (locked) return;
+        $('btn-next').disabled = input.value.trim() === '';
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !$('btn-next').disabled) $('btn-next').click();
+      });
+      wrap.appendChild(input);
+      box.appendChild(wrap);
+      setTimeout(() => input.focus(), 50);
+    } else {
+      q.options.forEach((text, i) => {
+        const b = el('button', 'opt');
+        b.type = 'button';
+        const num = el('span', 'num');
+        num.textContent = i + 1;
+        const label = el('span');
+        label.textContent = text;
+        b.append(num, label);
+        b.addEventListener('click', () => choose(i));
+        box.appendChild(b);
+      });
+    }
 
     const next = $('btn-next');
     next.disabled = true;
@@ -237,14 +270,35 @@
   function reveal() {
     const q = QUESTIONS[idx];
     locked = true;
-    answers[idx] = picked;
 
-    [...$('q-options').children].forEach((n, k) => {
-      n.classList.add('locked');
-      n.classList.remove('selected');
-      if (k === q.answer) n.classList.add('correct');
-      else if (k === picked) n.classList.add('wrong');
-    });
+    if (isText(q)) {
+      const input = $('q-input');
+      const value = input.value.trim();
+      openAnswers[idx] = value;
+      answers[idx] = -1;
+
+      input.disabled = true;
+      const ok = isAcceptedText(q, value);
+      input.classList.add(ok ? 'correct' : 'wrong');
+
+      // 정답 문자열을 입력창 아래에 표시
+      const hint = el('div', 'answer-hint');
+      hint.innerHTML = '';
+      const k = el('span', 'k');
+      k.textContent = '정답 · ';
+      const strong = el('b');
+      strong.textContent = q.answer;
+      hint.append(k, strong);
+      $('q-options').appendChild(hint);
+    } else {
+      answers[idx] = picked;
+      [...$('q-options').children].forEach((n, k) => {
+        n.classList.add('locked');
+        n.classList.remove('selected');
+        if (k === q.answer) n.classList.add('correct');
+        else if (k === picked) n.classList.add('wrong');
+      });
+    }
 
     $('q-bar').style.width = ((idx + 1) / TOTAL) * 100 + '%';
     $('btn-next').textContent = idx + 1 < TOTAL ? '다음 문항 →' : '제출하기';
@@ -280,7 +334,9 @@
       const k = el('span', 'k');
       k.textContent = '정답 · ';
       const right = el('span', 'right');
-      right.textContent = numMark(q.answer) + ' ' + q.options[q.answer];
+      right.textContent = isText(q)
+        ? q.answer
+        : numMark(q.answer) + ' ' + q.options[q.answer];
       ans.append(k, right);
 
       item.append(head, qt, ans);
@@ -296,6 +352,7 @@
     const payload = {
       session: SESSION,
       answers: answers.map((a) => (a == null ? -1 : a)),
+      open_answers: openAnswers,
     };
 
     hasSubmitted = true;
@@ -309,9 +366,15 @@
       return;
     }
 
-    const { error } = await db.from('responses').insert(payload);
+    let { error } = await db.from('responses').insert(payload);
+
+    // open_answers 컬럼이 아직 없으면 그 필드를 빼고 다시 저장합니다
     if (error) {
-      console.error('[quiz] 저장 실패', error);
+      const { open_answers, ...rest } = payload;
+      ({ error } = await db.from('responses').insert(rest));
+    }
+    if (error) {
+      console.error('[quiz] 저장 실패', error.message || error);
       toast('응답 저장에 실패했어요. 통계에 반영되지 않을 수 있습니다.');
     }
   }
@@ -322,13 +385,22 @@
       rows = JSON.parse(localStorage.getItem(KEY_LOCAL) || '[]');
       return;
     }
-    const { data, error } = await db
+    let { data, error } = await db
       .from('responses')
-      .select('answers')
-      .eq('session', CFG.QUIZ_SESSION || 'default')
+      .select('answers, open_answers')
+      .eq('session', SESSION)
       .limit(5000);
+
+    // open_answers 컬럼이 아직 없는(마이그레이션 전) 경우 객관식만이라도 불러옵니다
     if (error) {
-      console.error('[quiz] 응답 조회 실패', error);
+      ({ data, error } = await db
+        .from('responses')
+        .select('answers')
+        .eq('session', SESSION)
+        .limit(5000));
+    }
+    if (error) {
+      console.error('[quiz] 응답 조회 실패', error.message || error);
       return;
     }
     rows = data || [];
@@ -367,64 +439,133 @@
     const box = $('qstats');
     box.innerHTML = '';
     QUESTIONS.forEach((q, i) => {
-      const counts = Array(q.options.length).fill(0);
-      let answered = 0;
-      rows.forEach((r) => {
-        const a = (r.answers || [])[i];
-        if (a != null && a >= 0 && a < counts.length) {
-          counts[a]++;
-          answered++;
-        }
-      });
-      const rate = answered ? (counts[q.answer] / answered) * 100 : 0;
-
-      const card = el('div', 'qstat');
-
-      const top = el('div', 'top');
-      const label = el('div', 'label');
-      const tag = el('i');
-      tag.textContent = 'Q' + (i + 1);
-      label.appendChild(tag);
-      label.appendChild(document.createTextNode(q.q));
-      const rt = el('div', 'rate');
-      rt.textContent = Math.round(rate) + '%';
-      rt.style.color =
-        rate >= 70 ? 'var(--good)' : rate >= 40 ? 'var(--accent-2)' : 'var(--bad)';
-      top.append(label, rt);
-
-      const meter = el('div', 'meter');
-      const fill = el('i');
-      fill.style.width = rate + '%';
-      fill.style.background =
-        rate >= 70
-          ? 'linear-gradient(90deg,#4ade80,#86efac)'
-          : rate >= 40
-          ? 'linear-gradient(90deg,#f0b23f,#fcd34d)'
-          : 'linear-gradient(90deg,#fb7185,#fda4af)';
-      meter.appendChild(fill);
-
-      // 선택지별 응답 분포 — 어느 오답으로 많이 몰렸는지 보이는 부분
-      const bd = el('div', 'breakdown');
-      counts.forEach((c, k) => {
-        const pct = answered ? (c / answered) * 100 : 0;
-        const row = el('div', 'brow' + (k === q.answer ? ' is-answer' : ''));
-        const key = el('span', 'k');
-        key.textContent = k + 1;
-        const text = el('span', 'otext');
-        text.textContent = q.options[k];
-        const track = el('div', 'track');
-        const ti = el('i');
-        ti.style.width = pct + '%';
-        track.appendChild(ti);
-        const v = el('span', 'v');
-        v.textContent = c + '명';
-        row.append(key, text, v, track); // 그리드 배치 순서: 글 → 인원 → 막대
-        bd.appendChild(row);
-      });
-
-      card.append(top, meter, bd);
-      box.appendChild(card);
+      box.appendChild(isText(q) ? textStatCard(q, i) : choiceStatCard(q, i));
     });
+  }
+
+  // 객관식 문항 한 장
+  function choiceStatCard(q, i) {
+    const counts = Array(q.options.length).fill(0);
+    let answered = 0;
+    rows.forEach((r) => {
+      const a = (r.answers || [])[i];
+      if (a != null && a >= 0 && a < counts.length) {
+        counts[a]++;
+        answered++;
+      }
+    });
+    const rate = answered ? (counts[q.answer] / answered) * 100 : 0;
+
+    const card = el('div', 'qstat');
+
+    const top = el('div', 'top');
+    const label = el('div', 'label');
+    const tag = el('i');
+    tag.textContent = 'Q' + (i + 1);
+    label.appendChild(tag);
+    label.appendChild(document.createTextNode(q.q));
+    const rt = el('div', 'rate');
+    rt.textContent = Math.round(rate) + '%';
+    rt.style.color =
+      rate >= 70 ? 'var(--good)' : rate >= 40 ? 'var(--accent-2)' : 'var(--bad)';
+    top.append(label, rt);
+
+    const meter = el('div', 'meter');
+    const fill = el('i');
+    fill.style.width = rate + '%';
+    fill.style.background =
+      rate >= 70
+        ? 'linear-gradient(90deg,#4ade80,#86efac)'
+        : rate >= 40
+        ? 'linear-gradient(90deg,#f0b23f,#fcd34d)'
+        : 'linear-gradient(90deg,#fb7185,#fda4af)';
+    meter.appendChild(fill);
+
+    const bd = el('div', 'breakdown');
+    counts.forEach((c, k) => {
+      const pct = answered ? (c / answered) * 100 : 0;
+      const row = el('div', 'brow' + (k === q.answer ? ' is-answer' : ''));
+      const key = el('span', 'k');
+      key.textContent = k + 1;
+      const text = el('span', 'otext');
+      text.textContent = q.options[k];
+      const track = el('div', 'track');
+      const ti = el('i');
+      ti.style.width = pct + '%';
+      track.appendChild(ti);
+      const v = el('span', 'v');
+      v.textContent = c + '명';
+      row.append(key, text, v, track);
+      bd.appendChild(row);
+    });
+
+    card.append(top, meter, bd);
+    return card;
+  }
+
+  // 주관식 문항 한 장 — 같은 답끼리 묶어 많이 나온 순으로 보여줍니다
+  function textStatCard(q, i) {
+    const groups = new Map(); // 정규화값 → {label, count, ok}
+    let answered = 0;
+    let correct = 0;
+    rows.forEach((r) => {
+      const raw = (r.open_answers || {})[i];
+      const v = norm(raw);
+      if (!v) return;
+      answered++;
+      const ok = isAcceptedText(q, raw);
+      if (ok) correct++;
+      const key = ok ? '__answer__' : v;
+      if (!groups.has(key)) {
+        groups.set(key, { label: ok ? q.answer : raw.toString().trim(), count: 0, ok });
+      }
+      groups.get(key).count++;
+    });
+
+    const list = [...groups.values()].sort((a, b) => b.count - a.count);
+    const rate = answered ? (correct / answered) * 100 : 0;
+    const max = list.reduce((m, g) => Math.max(m, g.count), 0);
+
+    const card = el('div', 'qstat');
+
+    const top = el('div', 'top');
+    const label = el('div', 'label');
+    const tag = el('i');
+    tag.textContent = 'Q' + (i + 1) + ' · 주관식';
+    label.appendChild(tag);
+    label.appendChild(document.createTextNode(q.q));
+    const rt = el('div', 'rate');
+    rt.textContent = Math.round(rate) + '%';
+    rt.style.color =
+      rate >= 70 ? 'var(--good)' : rate >= 40 ? 'var(--accent-2)' : 'var(--bad)';
+    top.append(label, rt);
+
+    const bd = el('div', 'breakdown');
+    if (list.length === 0) {
+      const empty = el('div', 'otext');
+      empty.style.color = 'var(--text-faint)';
+      empty.textContent = '아직 응답이 없습니다.';
+      bd.appendChild(empty);
+    }
+    list.forEach((g) => {
+      const pct = max ? (g.count / max) * 100 : 0;
+      const row = el('div', 'brow' + (g.ok ? ' is-answer' : ''));
+      const key = el('span', 'k');
+      key.textContent = g.ok ? '✓' : '·';
+      const text = el('span', 'otext');
+      text.textContent = g.label;
+      const track = el('div', 'track');
+      const ti = el('i');
+      ti.style.width = pct + '%';
+      track.appendChild(ti);
+      const v = el('span', 'v');
+      v.textContent = g.count + '명';
+      row.append(key, text, v, track);
+      bd.appendChild(row);
+    });
+
+    card.append(top, bd);
+    return card;
   }
 
   // ── 실시간 구독 ───────────────────────────────────────
@@ -465,6 +606,7 @@
   function start() {
     idx = 0;
     answers = [];
+    openAnswers = {};
     renderQuestion();
     show('quiz');
   }

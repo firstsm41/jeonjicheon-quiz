@@ -575,6 +575,55 @@ body::after {
   color: #3d0512;
 }
 
+/* 주관식 입력 */
+.text-answer input {
+  width: 100%;
+  padding: 17px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  transition: border-color 0.18s, background 0.18s;
+}
+.text-answer input::placeholder {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+.text-answer input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(167, 139, 250, 0.08);
+}
+.text-answer input.correct {
+  border-color: rgba(74, 222, 128, 0.7);
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--good);
+}
+.text-answer input.wrong {
+  border-color: rgba(251, 113, 133, 0.6);
+  background: rgba(251, 113, 133, 0.1);
+}
+.answer-hint {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--good);
+  font-size: 15px;
+  animation: rise 0.32s var(--ease) both;
+}
+.answer-hint .k {
+  color: var(--text-faint);
+}
+.answer-hint b {
+  color: var(--good);
+  font-weight: 700;
+}
+
 .feedback {
   margin-top: 16px;
   padding: 15px 17px;

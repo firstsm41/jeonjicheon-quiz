@@ -1,7 +1,14 @@
 -- ─────────────────────────────────────────────────────────────
---  이미 schema.sql 을 실행한 프로젝트에 '진행자 설정' 기능만 추가하는 SQL
---  Supabase → SQL Editor 에 붙여넣고 Run 하세요. (한 번만)
+--  이미 schema.sql 을 실행한 프로젝트에 뒤늦게 추가된 기능을
+--  붙이는 마이그레이션 SQL. Supabase → SQL Editor 에 붙여넣고 Run 하세요.
+--  (여러 번 실행해도 안전합니다)
 -- ─────────────────────────────────────────────────────────────
+
+-- 주관식(Q6) 답안을 담을 컬럼
+alter table public.responses
+  add column if not exists open_answers jsonb not null default '{}'::jsonb;
+
+-- ── 진행자 설정 테이블 ────────────────────────────────────────
 
 create table if not exists public.settings (
   session      text primary key,

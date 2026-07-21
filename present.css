@@ -1,0 +1,399 @@
+/* ─────────────────────────────────────────────
+   전체 결과 — 강당 화면(빔프로젝터)용 발표 페이지
+   가로 화면 기준, 큰 글씨. 한 번에 한 문항씩 보여줍니다.
+   ───────────────────────────────────────────── */
+:root {
+  --bg: #0b0a14;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --text: #f2eefb;
+  --text-dim: #a79fc0;
+  --text-faint: #6f6788;
+  --accent: #a78bfa;
+  --accent-2: #f0b23f;
+  --good: #4ade80;
+  --bad: #fb7185;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Pretendard Variable', Pretendard, -apple-system,
+    'Apple SD Gothic Neo', 'Segoe UI', 'Noto Sans KR', sans-serif;
+  letter-spacing: -0.015em;
+  word-break: keep-all;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+      70vw 70vh at 12% -10%,
+      rgba(124, 92, 255, 0.28),
+      transparent 60%
+    ),
+    radial-gradient(60vw 60vh at 110% 120%, rgba(240, 150, 63, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 2.6vw, 40px);
+  gap: clamp(12px, 1.8vh, 26px);
+}
+
+/* ── 상단 바 ─────────────────────────────── */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex: 0 0 auto;
+}
+.brand {
+  font-size: clamp(16px, 1.9vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.6vw, 26px);
+}
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  font-size: clamp(13px, 1.2vw, 17px);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.live .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--good);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(74, 222, 128, 0);
+  }
+}
+.people {
+  font-size: clamp(15px, 1.5vw, 22px);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.people b {
+  color: var(--accent-2);
+  font-size: clamp(22px, 2.6vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 슬라이드 ────────────────────────────── */
+.slide {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(14px, 2.4vh, 34px);
+}
+.slide.turn {
+  animation: slidein 0.45s var(--ease);
+}
+@keyframes slidein {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+/* 표지 슬라이드 */
+.cover {
+  text-align: center;
+}
+.cover .big {
+  font-size: clamp(64px, 13vw, 200px);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
+}
+.cover .cap {
+  margin-top: 12px;
+  font-size: clamp(18px, 2.4vw, 34px);
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.cover .sub {
+  margin-top: 28px;
+  font-size: clamp(14px, 1.6vw, 22px);
+  color: var(--text-faint);
+}
+
+/* 문항 슬라이드 */
+.q-head {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(12px, 1.4vw, 22px);
+  flex: 0 0 auto;
+}
+.q-tag {
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.18);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  color: #d4c5ff;
+  font-size: clamp(14px, 1.4vw, 20px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.q-title {
+  font-size: clamp(22px, 3vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.28;
+}
+.q-rate {
+  margin-left: auto;
+  flex: 0 0 auto;
+  text-align: right;
+  white-space: nowrap;
+}
+.q-rate b {
+  font-size: clamp(28px, 4vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.q-rate span {
+  display: block;
+  font-size: clamp(12px, 1.1vw, 17px);
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.opts {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.4vh, 18px);
+}
+.opt-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: clamp(12px, 1.4vw, 22px);
+  padding: clamp(10px, 1.5vh, 20px) clamp(14px, 1.6vw, 26px);
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.opt-row .fillbar {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: width 0.7s var(--ease);
+  z-index: 0;
+}
+.opt-row.is-answer {
+  border-color: rgba(74, 222, 128, 0.55);
+}
+.opt-row.is-answer .fillbar {
+  background: rgba(74, 222, 128, 0.2);
+}
+.opt-row > * {
+  position: relative;
+  z-index: 1;
+}
+.opt-key {
+  width: clamp(30px, 2.6vw, 46px);
+  height: clamp(30px, 2.6vw, 46px);
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: clamp(15px, 1.5vw, 24px);
+  font-weight: 800;
+}
+.opt-row.is-answer .opt-key {
+  background: var(--good);
+  color: #05300f;
+}
+.opt-text {
+  font-size: clamp(16px, 1.8vw, 30px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.opt-row.is-answer .opt-text {
+  font-weight: 700;
+}
+.opt-count {
+  font-size: clamp(16px, 1.8vw, 30px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.opt-row.is-answer .opt-count {
+  color: var(--good);
+}
+
+/* 주관식 슬라이드 */
+.subj-answer {
+  flex: 0 0 auto;
+  padding: clamp(12px, 1.6vh, 22px) clamp(16px, 1.8vw, 28px);
+  border-radius: 16px;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  font-size: clamp(18px, 2vw, 32px);
+}
+.subj-answer .k {
+  color: var(--text-faint);
+}
+.subj-answer b {
+  color: var(--good);
+  font-weight: 800;
+}
+.subj-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(8px, 1vw, 16px);
+  align-content: flex-start;
+  overflow: hidden;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: clamp(8px, 1.2vh, 15px) clamp(14px, 1.4vw, 22px);
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: clamp(15px, 1.6vw, 26px);
+  font-weight: 600;
+}
+.chip.ok {
+  background: rgba(74, 222, 128, 0.16);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: var(--good);
+}
+.chip .n {
+  font-weight: 800;
+  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
+}
+.chip.ok .n {
+  color: var(--good);
+}
+.subj-empty {
+  font-size: clamp(16px, 1.8vw, 26px);
+  color: var(--text-faint);
+}
+
+/* ── 하단 내비 ───────────────────────────── */
+.nav {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 2vw, 34px);
+}
+.nav-btn {
+  width: clamp(46px, 4vw, 64px);
+  height: clamp(46px, 4vw, 64px);
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: clamp(20px, 2vw, 30px);
+  cursor: pointer;
+  transition: background 0.16s, transform 0.16s;
+}
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+.nav-btn:active {
+  transform: scale(0.92);
+}
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.dots {
+  display: flex;
+  gap: clamp(8px, 0.9vw, 14px);
+}
+.dots i {
+  width: clamp(8px, 0.8vw, 12px);
+  height: clamp(8px, 0.8vw, 12px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.2s, transform 0.2s;
+}
+.dots i.on {
+  background: var(--accent-2);
+  transform: scale(1.3);
+}
+
+.hint {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  transition: opacity 0.4s;
+}
+.hint.gone {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

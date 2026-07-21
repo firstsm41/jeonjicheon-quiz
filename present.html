@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>전체 결과 · 이단 예방 퀴즈</title>
+    <meta name="robots" content="noindex" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <link rel="stylesheet" href="present.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>"
+    />
+  </head>
+  <body>
+    <main class="stage" id="stage">
+      <!-- 상단 바 -->
+      <header class="bar">
+        <div class="brand">🕊️ 이단 예방 퀴즈 · 전체 결과</div>
+        <div class="bar-right">
+          <span class="live"><i class="dot"></i> 실시간</span>
+          <span class="people"><b id="total">0</b>명 참여</span>
+        </div>
+      </header>
+
+      <!-- 슬라이드 영역 -->
+      <section class="slide" id="slide"></section>
+
+      <!-- 하단 내비 -->
+      <footer class="nav">
+        <button class="nav-btn" id="prev" aria-label="이전">←</button>
+        <div class="dots" id="dots"></div>
+        <button class="nav-btn" id="next" aria-label="다음">→</button>
+      </footer>
+    </main>
+
+    <p class="hint" id="hint">← → 방향키 또는 화면 좌우를 눌러 넘기세요</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+    <script src="config.js"></script>
+    <script src="questions.js"></script>
+    <script src="present.js"></script>
+  </body>
+</html>
