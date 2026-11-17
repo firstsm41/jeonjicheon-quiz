@@ -9,7 +9,7 @@
         "http.server",
         "4321",
         "--directory",
-        "/Users/sungmin/Desktop/클로드 코드"
+        "."
       ],
       "port": 4321
     }
