@@ -127,7 +127,7 @@
       // settings 테이블이 아직 없는 경우 — 기기 로컬 설정으로 대체합니다
       settingsTableOk = false;
       showResults = localStorage.getItem(KEY_SHOW) === '1';
-      console.warn('[quiz] settings 테이블을 읽지 못했습니다. schema-settings.sql 을 실행하세요.', error.message);
+      console.warn('[quiz] settings 테이블을 읽지 못했습니다. database/schema-settings.sql 을 실행하세요.', error.message);
       return;
     }
     showResults = !!(data && data.show_results);
@@ -668,7 +668,7 @@
 
   // ── 시작 ──────────────────────────────────────────────
   if (!configured) {
-    console.warn('[quiz] config.js 에 Supabase 정보가 없어 오프라인 모드로 동작합니다.');
+    console.warn('[quiz] assets/js/config.js 에 Supabase 정보가 없어 오프라인 모드로 동작합니다.');
   }
   applyVisibility();
   loadSettings().then(applyVisibility);
